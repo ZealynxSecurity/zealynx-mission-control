@@ -106,34 +106,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="//api.telegram.org" />
       </head>
       
-      <body className={`${inter.variable} font-sans antialiased bg-background text-text-primary mobile-safe-area`}>
-        {/* Background patterns */}
-        <div className="fixed inset-0 -z-10 overflow-hidden">
-          {/* Base gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-background via-background-secondary to-background-tertiary" />
-          
-          {/* Zealynx accent gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-zealynx-700/5 via-transparent to-zealynx-500/5" />
-          
-          {/* Animated background dots */}
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-zealynx-500/20 rounded-full animate-pulse" />
-            <div className="absolute top-3/4 right-1/4 w-3 h-3 bg-zealynx-300/10 rounded-full animate-pulse animate-delay-200" />
-            <div className="absolute bottom-1/4 left-1/3 w-1 h-1 bg-zealynx-400/30 rounded-full animate-pulse animate-delay-500" />
-          </div>
-          
-          {/* Grid pattern overlay */}
-          <div 
-            className="absolute inset-0 opacity-[0.02]"
-            style={{
-              backgroundImage: `
-                radial-gradient(circle at 1px 1px, rgba(19, 183, 193, 0.3) 1px, transparent 0)
-              `,
-              backgroundSize: '20px 20px',
-            }}
-          />
-        </div>
-        
+      <body className={`${inter.variable} font-sans antialiased mobile-safe-area`}>
         {/* Main app content */}
         <div className="relative z-0 min-h-screen min-h-dvh">
           {children}
