@@ -24,7 +24,7 @@ interface MetricCardProps {
   title: string;
   value: string;
   change?: string;
-  changeType?: 'positive' | 'negative' | 'neutral';
+  changeType?: 'positive' | 'negative' | 'neutral' | 'warning';
   icon: React.ComponentType<any>;
   description?: string;
 }
@@ -34,6 +34,7 @@ function MetricCard({ title, value, change, changeType = 'neutral', icon: Icon, 
     switch (changeType) {
       case 'positive': return 'text-[var(--color-success)]';
       case 'negative': return 'text-[var(--color-error)]';
+      case 'warning': return 'text-[var(--color-warning)]';
       default: return 'text-[var(--color-text-subtle)]';
     }
   };

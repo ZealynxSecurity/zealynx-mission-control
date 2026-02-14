@@ -6,7 +6,7 @@ export default function HomePage() {
     <Layout>
       <div className="space-y-6">
         <div className="flex flex-col gap-2">
-          <h1 className="heading-xl text-gradient-zealynx">
+          <h1 className="heading-xl zealynx-gradient-text">
             Overview
           </h1>
           <p className="subheading">

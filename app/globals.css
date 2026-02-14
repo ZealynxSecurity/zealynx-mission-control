@@ -432,13 +432,4 @@ body {
   }
 }
 
-/* Utilities */
-@layer utilities {
-  .text-gradient-zealynx {
-    @apply zealynx-gradient-text;
-  }
-  
-  .bg-gradient-zealynx {
-    @apply zealynx-gradient-bg;
-  }
-}
+/* Utilities section removed due to circular dependency */
