@@ -1,393 +1,72 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { formatCurrency, formatNumber, formatPercentage, formatTimeAgo } from '@/lib/utils';
-import { ENREACH_CONFIG, CURRENT_BUSINESS_METRICS } from '@/lib/constants';
-import type { EnreachCampaign, Contact } from '@/types/database';
+import { 
+  TrendingUp,
+  TrendingDown,
+  Users,
+  MessageSquare,
+  Target,
+  DollarSign,
+  Play,
+  Pause,
+  Settings,
+  BarChart3,
+  Eye,
+  Mail,
+  Phone,
+  Calendar,
+  AlertCircle,
+  CheckCircle,
+  Clock
+} from 'lucide-react';
 
 interface EnreachDashboardProps {
   className?: string;
 }
 
-// Mock data representing Carlos's actual Enreach setup
-const MOCK_CAMPAIGNS: EnreachCampaign[] = [
-  {
-    id: '1',
-    campaign_name: 'Web3 Audit Outreach Q1',
-    agent_name: 'Alessandro',
-    platform: 'telegram',
-    status: 'active',
-    targets_total: 500,
-    targets_contacted: 342,
-    responses_received: 18,
-    leads_qualified: 4,
-    conversion_rate: 0.053,
-    campaign_data: {
-      start_date: new Date('2026-02-01').toISOString(),
-      message_template: 'Hi! I\'m reaching out on behalf of Zealynx Security...',
-      targeting_criteria: 'Web3 projects with $1M+ funding',
-      cost_per_lead: 45.50,
-    },
-    created_at: new Date('2026-02-01').toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '2', 
-    campaign_name: 'DeFi Partnership Outreach',
-    agent_name: 'Aliza',
-    platform: 'linkedin',
-    status: 'active',
-    targets_total: 300,
-    targets_contacted: 198,
-    responses_received: 12,
-    leads_qualified: 3,
-    conversion_rate: 0.061,
-    campaign_data: {
-      start_date: new Date('2026-01-28').toISOString(),
-      message_template: 'Hello! I noticed your work in DeFi and wanted to connect...',
-      targeting_criteria: 'DeFi protocol founders and CTOs',
-      cost_per_lead: 38.20,
-    },
-    created_at: new Date('2026-01-28').toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    campaign_name: 'Smart Contract Security Follow-up',
-    agent_name: 'Zofia',
-    platform: 'email',
-    status: 'paused',
-    targets_total: 150,
-    targets_contacted: 89,
-    responses_received: 5,
-    leads_qualified: 2,
-    conversion_rate: 0.056,
-    campaign_data: {
-      start_date: new Date('2026-02-05').toISOString(),
-      message_template: 'Following up on our previous conversation about audit services...',
-      targeting_criteria: 'Previous audit inquiries',
-      cost_per_lead: 52.75,
-    },
-    created_at: new Date('2026-02-05').toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    campaign_name: 'Solana Ecosystem Outreach',
-    agent_name: 'Anna', 
-    platform: 'telegram',
-    status: 'active',
-    targets_total: 400,
-    targets_contacted: 267,
-    responses_received: 21,
-    leads_qualified: 6,
-    conversion_rate: 0.079,
-    campaign_data: {
-      start_date: new Date('2026-02-03').toISOString(),
-      message_template: 'Hey! Saw your Solana project and would love to discuss security audits...',
-      targeting_criteria: 'Solana ecosystem projects',
-      cost_per_lead: 41.30,
-    },
-    created_at: new Date('2026-02-03').toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
-const MOCK_RECENT_LEADS: Contact[] = [
-  {
-    id: '1',
-    name: 'DeFi Protocol XYZ',
-    email: 'cto@defiprotocol.xyz',
-    company: 'DeFi Protocol XYZ',
-    role: 'CTO',
-    telegram_username: '@defi_cto',
-    last_interaction: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4h ago
-    interaction_count: 5,
-    contact_type: 'prospect',
-    contact_data: {
-      business_value: 9,
-      sentiment_score: 0.8,
-      communication_frequency: 3,
-      preferred_contact_method: 'telegram',
-      notes: 'Need Solidity audit for $2M protocol launch. Series A funded.',
-    },
-    created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Blockchain Gaming Studio',
-    email: 'dev@gamedao.com',
-    company: 'GameDAO',
-    role: 'Lead Developer',
-    linkedin_url: 'linkedin.com/in/gamedev-lead',
-    last_interaction: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), // 8h ago
-    interaction_count: 3,
-    contact_type: 'prospect',
-    contact_data: {
-      business_value: 7,
-      sentiment_score: 0.6,
-      communication_frequency: 2,
-      preferred_contact_method: 'email',
-      notes: 'Interested in NFT marketplace security review. Seed funded.',
-    },
-    created_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    name: 'Cross-chain Bridge Protocol',
-    email: 'security@bridgeprotocol.io',
-    company: 'Bridge Protocol Inc',
-    role: 'Security Lead',
-    telegram_username: '@bridge_security_lead',
-    last_interaction: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12h ago
-    interaction_count: 8,
-    contact_type: 'prospect',
-    contact_data: {
-      business_value: 10,
-      sentiment_score: 0.9,
-      communication_frequency: 4,
-      preferred_contact_method: 'telegram',
-      notes: 'Critical bridge security audit needed before $10M TVL milestone. Series B funded.',
-    },
-    created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
-export function EnreachDashboard({ className = '' }: EnreachDashboardProps) {
-  const [campaigns, setCampaigns] = useState<EnreachCampaign[]>(MOCK_CAMPAIGNS);
-  const [recentLeads, setRecentLeads] = useState<Contact[]>(MOCK_RECENT_LEADS);
-  const [selectedTimeframe, setSelectedTimeframe] = useState<'7d' | '30d' | '90d'>('30d');
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Calculate aggregate metrics
-  const totalSent = campaigns.reduce((sum, c) => sum + c.targets_contacted, 0);
-  const totalResponses = campaigns.reduce((sum, c) => sum + c.responses_received, 0);
-  const totalQualified = campaigns.reduce((sum, c) => sum + c.leads_qualified, 0);
-  const avgResponseRate = totalSent > 0 ? totalResponses / totalSent : 0;
-  const avgConversionRate = totalResponses > 0 ? totalQualified / totalResponses : 0;
-  const avgCostPerLead = campaigns.length > 0 
-    ? campaigns.reduce((sum, c) => sum + (c.campaign_data.cost_per_lead || 0), 0) / campaigns.length 
-    : 0;
-
-  // Active campaigns
-  const activeCampaigns = campaigns.filter(c => c.status === 'active');
-
-  // Agent performance
-  const agentStats = ENREACH_CONFIG.agents.map(agent => {
-    const agentCampaigns = campaigns.filter(c => c.agent_name === agent.name);
-    const agentLeads = agentCampaigns.reduce((sum, c) => sum + c.leads_qualified, 0);
-    const agentSent = agentCampaigns.reduce((sum, c) => sum + c.targets_contacted, 0);
-    return {
-      ...agent,
-      campaigns: agentCampaigns.length,
-      leads: agentLeads,
-      sent: agentSent,
-      performance: agentSent > 0 ? agentLeads / agentSent : 0,
-    };
-  }).sort((a, b) => b.performance - a.performance);
-
-  // Mock refresh function
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      // Simulate slight updates
-      setCampaigns(prev => prev.map(campaign => ({
-        ...campaign,
-        targets_contacted: Math.min(campaign.targets_total, campaign.targets_contacted + Math.floor(Math.random() * 5)),
-        responses_received: campaign.responses_received + Math.floor(Math.random() * 2),
-      })));
-      setIsRefreshing(false);
-    }, 1500);
-  };
-
-  return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Header Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="card">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">🚀</span>
-            <div>
-              <p className="caption">Active Campaigns</p>
-              <p className="text-2xl font-semibold" style={{color: '#f1f5f9'}}>
-                {formatNumber(activeCampaigns.length)}
-              </p>
-            </div>
-          </div>
-          <p className="text-xs" style={{color: '#94a3b8'}}>
-            {formatNumber(campaigns.length)} total campaigns
-          </p>
-        </div>
-        
-        <div className="card">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">📧</span>
-            <div>
-              <p className="caption">Messages Sent</p>
-              <p className="text-2xl font-semibold" style={{color: '#f1f5f9'}}>
-                {formatNumber(totalSent)}
-              </p>
-            </div>
-          </div>
-          <p className="text-xs" style={{color: '#94a3b8'}}>
-            {formatPercentage(avgResponseRate)} response rate
-          </p>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">✅</span>
-            <div>
-              <p className="caption">Qualified Leads</p>
-              <p className="text-2xl font-semibold text-teal-400">
-                {formatNumber(totalQualified)}
-              </p>
-            </div>
-          </div>
-          <p className="text-xs" style={{color: '#94a3b8'}}>
-            {formatPercentage(avgConversionRate)} conversion rate
-          </p>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">💰</span>
-            <div>
-              <p className="caption">Cost Per Lead</p>
-              <p className="text-2xl font-semibold text-amber-400">
-                {formatCurrency(avgCostPerLead)}
-              </p>
-            </div>
-          </div>
-          <p className="text-xs" style={{color: '#94a3b8'}}>
-            Below ${ENREACH_CONFIG.success_metrics.cost_per_lead} target
-          </p>
-        </div>
-      </div>
-
-      {/* Campaign Performance */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <div className="card">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="heading-sm mb-2">Campaign Performance</h3>
-                <p className="caption">Real-time tracking of outreach campaigns</p>
-              </div>
-              <div className="flex gap-2">
-                <select 
-                  value={selectedTimeframe}
-                  onChange={(e) => setSelectedTimeframe(e.target.value as '7d' | '30d' | '90d')}
-                  className="text-sm px-3 py-1 rounded border"
-                  style={{
-                    background: '#374151',
-                    color: '#f3f4f6',
-                    borderColor: '#4b5563',
-                  }}
-                >
-                  <option value="7d">Last 7 days</option>
-                  <option value="30d">Last 30 days</option>
-                  <option value="90d">Last 90 days</option>
-                </select>
-                <button
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                  className="btn btn-secondary text-xs"
-                >
-                  {isRefreshing ? '🔄' : '↻'}
-                </button>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              {campaigns.map((campaign, index) => (
-                <CampaignCard
-                  key={campaign.id}
-                  campaign={campaign}
-                  delay={index * 100}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Agent Performance */}
-        <div className="card">
-          <div className="mb-6">
-            <h3 className="heading-sm mb-2">Agent Performance</h3>
-            <p className="caption">Top performing Enreach agents</p>
-          </div>
-          
-          <div className="space-y-3">
-            {agentStats.slice(0, 6).map((agent, index) => (
-              <div key={agent.name} className="flex items-center justify-between p-3 rounded-lg" style={{background: 'rgba(30, 41, 59, 0.5)'}}>
-                <div>
-                  <p className="font-medium" style={{color: '#f1f5f9'}}>{agent.name}</p>
-                  <p className="text-xs" style={{color: '#94a3b8'}}>
-                    {agent.platform} • {agent.campaigns} campaigns
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-teal-400">
-                    {agent.leads} leads
-                  </p>
-                  <p className="text-xs" style={{color: '#94a3b8'}}>
-                    {formatPercentage(agent.performance)} rate
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Qualified Leads */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="heading-sm mb-2">Recent Qualified Leads</h3>
-            <p className="caption">High-potential prospects from Enreach campaigns</p>
-          </div>
-          <button className="btn btn-primary text-xs">
-            View All Leads
-          </button>
-        </div>
-        
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {recentLeads.map((lead, index) => (
-            <LeadCard
-              key={lead.id}
-              lead={lead}
-              delay={index * 150}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+interface Campaign {
+  id: string;
+  name: string;
+  agentName: string;
+  platform: 'telegram' | 'linkedin' | 'email';
+  status: 'active' | 'paused' | 'completed' | 'draft';
+  targetsTotal: number;
+  targetsContacted: number;
+  responsesReceived: number;
+  leadsQualified: number;
+  conversionRate: number;
+  costPerLead: number;
+  startDate: string;
+  messageTemplate: string;
+  targetingCriteria: string;
+  budget: number;
+  spent: number;
 }
 
-// Sub-components
-interface CampaignCardProps {
-  campaign: EnreachCampaign;
-  delay?: number;
+interface CampaignCardProps extends Campaign {
+  onToggleStatus: (id: string) => void;
 }
 
-function CampaignCard({ campaign, delay = 0 }: CampaignCardProps) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'paused': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'completed': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'stopped': return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
-  };
-
-  const getPlatformEmoji = (platform: string) => {
+function CampaignCard({ 
+  id,
+  name, 
+  agentName, 
+  platform, 
+  status, 
+  targetsTotal,
+  targetsContacted, 
+  responsesReceived, 
+  leadsQualified, 
+  conversionRate, 
+  costPerLead,
+  startDate,
+  budget,
+  spent,
+  onToggleStatus
+}: CampaignCardProps) {
+  
+  const getPlatformIcon = () => {
     switch (platform) {
       case 'telegram': return '💬';
       case 'linkedin': return '💼';
@@ -396,155 +75,457 @@ function CampaignCard({ campaign, delay = 0 }: CampaignCardProps) {
     }
   };
 
-  const progress = (campaign.targets_contacted / campaign.targets_total) * 100;
+  const getPlatformColor = () => {
+    switch (platform) {
+      case 'telegram': return 'bg-blue-500/10 border-blue-500/30 text-blue-400';
+      case 'linkedin': return 'bg-blue-600/10 border-blue-600/30 text-blue-500';
+      case 'email': return 'bg-green-500/10 border-green-500/30 text-green-400';
+      default: return 'bg-gray-500/10 border-gray-500/30 text-gray-400';
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (status) {
+      case 'active': return 'bg-[var(--color-success)]/10 border-[var(--color-success)]/30 text-[var(--color-success)]';
+      case 'paused': return 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]/30 text-[var(--color-warning)]';
+      case 'completed': return 'bg-[var(--color-info)]/10 border-[var(--color-info)]/30 text-[var(--color-info)]';
+      case 'draft': return 'bg-[var(--color-text-subtle)]/10 border-[var(--color-text-subtle)]/30 text-[var(--color-text-subtle)]';
+      default: return 'bg-[var(--color-text-subtle)]/10 border-[var(--color-text-subtle)]/30 text-[var(--color-text-subtle)]';
+    }
+  };
+
+  const progressPercentage = (targetsContacted / targetsTotal) * 100;
+  const budgetUsed = (spent / budget) * 100;
+  const responseRate = (responsesReceived / targetsContacted) * 100 || 0;
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatDateAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    return `${days} days ago`;
+  };
 
   return (
-    <div 
-      className="p-4 rounded-lg border transition-all hover:shadow-md"
-      style={{
-        background: 'rgba(30, 41, 59, 0.3)',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        animationDelay: `${delay}ms`
-      }}
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 min-w-0">
-          <h4 className="font-medium truncate" style={{color: '#f1f5f9'}}>
-            {campaign.campaign_name}
-          </h4>
-          <div className="flex items-center gap-2 mt-1">
-            <span className={`status-indicator text-xs ${getStatusColor(campaign.status)}`}>
-              {campaign.status}
-            </span>
-            <span className="text-xs" style={{color: '#94a3b8'}}>
-              {getPlatformEmoji(campaign.platform)} {campaign.agent_name}
-            </span>
+    <div className="card hover:shadow-lg transition-all duration-200">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="text-2xl">{getPlatformIcon()}</div>
+          <div>
+            <h4 className="font-semibold text-[var(--color-text-primary)]">
+              {name}
+            </h4>
+            <p className="text-sm text-[var(--color-text-muted)]">
+              Agent: {agentName}
+            </p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-sm font-semibold text-teal-400">
-            {campaign.leads_qualified} leads
+        <div className="flex items-center gap-2">
+          <span className={`text-xs px-2 py-1 rounded-full border ${getPlatformColor()}`}>
+            {platform}
+          </span>
+          <span className={`text-xs px-2 py-1 rounded-full border ${getStatusColor()}`}>
+            {status}
+          </span>
+        </div>
+      </div>
+
+      {/* Key Metrics */}
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="text-center p-3 bg-[var(--color-bg-tertiary)] rounded-lg">
+          <p className="text-xs text-[var(--color-text-subtle)] mb-1">Response Rate</p>
+          <p className="text-lg font-bold text-[var(--color-text-primary)]">
+            {responseRate.toFixed(1)}%
           </p>
-          <p className="text-xs" style={{color: '#94a3b8'}}>
-            {formatCurrency(campaign.campaign_data.cost_per_lead || 0)} CPL
+        </div>
+        <div className="text-center p-3 bg-[var(--color-bg-tertiary)] rounded-lg">
+          <p className="text-xs text-[var(--color-text-subtle)] mb-1">Qualified Leads</p>
+          <p className="text-lg font-bold text-[var(--color-primary)]">
+            {leadsQualified}
           </p>
         </div>
       </div>
 
-      <div className="mb-3">
-        <div className="flex justify-between text-xs mb-1" style={{color: '#94a3b8'}}>
-          <span>Progress</span>
-          <span>{campaign.targets_contacted}/{campaign.targets_total}</span>
+      {/* Progress Bars */}
+      <div className="space-y-3 mb-4">
+        <div>
+          <div className="flex justify-between text-xs mb-1">
+            <span className="text-[var(--color-text-muted)]">Contacted</span>
+            <span className="text-[var(--color-text-primary)]">
+              {targetsContacted.toLocaleString()} / {targetsTotal.toLocaleString()}
+            </span>
+          </div>
+          <div className="w-full bg-[var(--color-bg-tertiary)] rounded-full h-2">
+            <div 
+              className="bg-[var(--color-primary)] h-2 rounded-full transition-all duration-300"
+              style={{ width: `${progressPercentage}%` }}
+            ></div>
+          </div>
         </div>
-        <div className="w-full bg-gray-700 rounded-full h-2">
-          <div 
-            className="bg-teal-500 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${Math.min(progress, 100)}%` }}
-          />
+
+        <div>
+          <div className="flex justify-between text-xs mb-1">
+            <span className="text-[var(--color-text-muted)]">Budget Used</span>
+            <span className="text-[var(--color-text-primary)]">
+              {formatCurrency(spent)} / {formatCurrency(budget)}
+            </span>
+          </div>
+          <div className="w-full bg-[var(--color-bg-tertiary)] rounded-full h-2">
+            <div 
+              className={`h-2 rounded-full transition-all duration-300 ${
+                budgetUsed > 90 ? 'bg-[var(--color-error)]' : 
+                budgetUsed > 70 ? 'bg-[var(--color-warning)]' : 
+                'bg-[var(--color-success)]'
+              }`}
+              style={{ width: `${Math.min(budgetUsed, 100)}%` }}
+            ></div>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-xs">
-        <div className="text-center">
-          <p style={{color: '#94a3b8'}}>Responses</p>
-          <p className="font-semibold" style={{color: '#f1f5f9'}}>{campaign.responses_received}</p>
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 gap-2 text-xs text-center mb-4">
+        <div>
+          <p className="text-[var(--color-text-subtle)]">Responses</p>
+          <p className="font-semibold text-[var(--color-text-primary)]">{responsesReceived}</p>
         </div>
-        <div className="text-center">
-          <p style={{color: '#94a3b8'}}>Rate</p>
-          <p className="font-semibold text-teal-400">
-            {formatPercentage(campaign.conversion_rate)}
-          </p>
+        <div>
+          <p className="text-[var(--color-text-subtle)]">Cost/Lead</p>
+          <p className="font-semibold text-[var(--color-text-primary)]">${costPerLead.toFixed(0)}</p>
         </div>
-        <div className="text-center">
-          <p style={{color: '#94a3b8'}}>Started</p>
-          <p className="font-semibold" style={{color: '#f1f5f9'}}>
-            {formatTimeAgo(campaign.campaign_data.start_date)}
-          </p>
+        <div>
+          <p className="text-[var(--color-text-subtle)]">Started</p>
+          <p className="font-semibold text-[var(--color-text-primary)]">{formatDateAgo(startDate)}</p>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between border-t border-[var(--color-border-primary)] pt-3">
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => onToggleStatus(id)}
+            className="btn btn-ghost btn-sm"
+          >
+            {status === 'active' ? <Pause size={14} /> : <Play size={14} />}
+            {status === 'active' ? 'Pause' : 'Start'}
+          </button>
+          <button className="btn btn-ghost btn-sm">
+            <Eye size={14} />
+            View
+          </button>
+        </div>
+        <button className="btn btn-ghost btn-sm">
+          <Settings size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface AgentStatsProps {
+  name: string;
+  activeCampaigns: number;
+  totalContacts: number;
+  responseRate: number;
+  leadsGenerated: number;
+  color: string;
+}
+
+function AgentStats({ name, activeCampaigns, totalContacts, responseRate, leadsGenerated, color }: AgentStatsProps) {
+  return (
+    <div className="card">
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`w-10 h-10 rounded-full bg-gradient-to-br from-${color}-500 to-${color}-600 flex items-center justify-center`}>
+          <span className="text-white font-semibold text-sm">
+            {name.charAt(0)}
+          </span>
+        </div>
+        <div>
+          <h4 className="font-semibold text-[var(--color-text-primary)]">{name}</h4>
+          <p className="text-xs text-[var(--color-text-muted)]">{activeCampaigns} active campaigns</p>
+        </div>
+      </div>
+      
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-[var(--color-text-subtle)]">Total Contacts:</span>
+          <span className="font-semibold text-[var(--color-text-primary)]">{totalContacts.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-[var(--color-text-subtle)]">Response Rate:</span>
+          <span className={`font-semibold ${
+            responseRate >= 15 ? 'text-[var(--color-success)]' :
+            responseRate >= 10 ? 'text-[var(--color-warning)]' :
+            'text-[var(--color-error)]'
+          }`}>
+            {responseRate.toFixed(1)}%
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-[var(--color-text-subtle)]">Leads Generated:</span>
+          <span className="font-semibold text-[var(--color-primary)]">{leadsGenerated}</span>
         </div>
       </div>
     </div>
   );
 }
 
-interface LeadCardProps {
-  lead: Contact;
-  delay?: number;
-}
+export function EnreachDashboard({ className = '' }: EnreachDashboardProps) {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 
-function LeadCard({ lead, delay = 0 }: LeadCardProps) {
-  const getStatusColor = (contactType: string) => {
-    switch (contactType) {
-      case 'prospect': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'client': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'partner': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-      case 'vendor': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
+  // Mock data - in real app this would come from Enreach API
+  useEffect(() => {
+    const mockCampaigns: Campaign[] = [
+      {
+        id: '1',
+        name: 'Web3 Audit Outreach Q1',
+        agentName: 'Alessandro',
+        platform: 'telegram',
+        status: 'active',
+        targetsTotal: 500,
+        targetsContacted: 342,
+        responsesReceived: 18,
+        leadsQualified: 4,
+        conversionRate: 0.053,
+        costPerLead: 45.50,
+        startDate: new Date('2026-02-01').toISOString(),
+        messageTemplate: 'Hi! I\'m reaching out on behalf of Zealynx Security...',
+        targetingCriteria: 'Web3 projects with $1M+ funding',
+        budget: 2000,
+        spent: 1560
+      },
+      {
+        id: '2',
+        name: 'DeFi Partnership Outreach',
+        agentName: 'Aliza',
+        platform: 'linkedin',
+        status: 'active',
+        targetsTotal: 300,
+        targetsContacted: 198,
+        responsesReceived: 12,
+        leadsQualified: 3,
+        conversionRate: 0.061,
+        costPerLead: 38.20,
+        startDate: new Date('2026-01-28').toISOString(),
+        messageTemplate: 'Hello! I noticed your work in DeFi...',
+        targetingCriteria: 'DeFi protocol founders and CTOs',
+        budget: 1500,
+        spent: 756
+      },
+      {
+        id: '3',
+        name: 'Smart Contract Dev Outreach',
+        agentName: 'Marco',
+        platform: 'email',
+        status: 'paused',
+        targetsTotal: 750,
+        targetsContacted: 425,
+        responsesReceived: 31,
+        leadsQualified: 7,
+        conversionRate: 0.073,
+        costPerLead: 42.85,
+        startDate: new Date('2026-01-20').toISOString(),
+        messageTemplate: 'Dear developer, I hope this email finds you well...',
+        targetingCriteria: 'Smart contract developers with GitHub activity',
+        budget: 3000,
+        spent: 1821
+      },
+    ];
+    
+    setCampaigns(mockCampaigns);
+  }, []);
+
+  const handleToggleStatus = (campaignId: string) => {
+    setCampaigns(prevCampaigns =>
+      prevCampaigns.map(campaign =>
+        campaign.id === campaignId
+          ? { 
+              ...campaign, 
+              status: campaign.status === 'active' ? 'paused' : 'active' as Campaign['status']
+            }
+          : campaign
+      )
+    );
+  };
+
+  // Calculate aggregated statistics
+  const totalTargets = campaigns.reduce((sum, c) => sum + c.targetsTotal, 0);
+  const totalContacted = campaigns.reduce((sum, c) => sum + c.targetsContacted, 0);
+  const totalResponses = campaigns.reduce((sum, c) => sum + c.responsesReceived, 0);
+  const totalLeads = campaigns.reduce((sum, c) => sum + c.leadsQualified, 0);
+  const totalBudget = campaigns.reduce((sum, c) => sum + c.budget, 0);
+  const totalSpent = campaigns.reduce((sum, c) => sum + c.spent, 0);
+
+  const avgResponseRate = totalContacted > 0 ? (totalResponses / totalContacted) * 100 : 0;
+  const avgCostPerLead = totalLeads > 0 ? totalSpent / totalLeads : 0;
+  const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
+
+  // Agent statistics
+  const agentStats = [
+    {
+      name: 'Alessandro',
+      activeCampaigns: campaigns.filter(c => c.agentName === 'Alessandro' && c.status === 'active').length,
+      totalContacts: campaigns.filter(c => c.agentName === 'Alessandro').reduce((sum, c) => sum + c.targetsContacted, 0),
+      responseRate: 12.4,
+      leadsGenerated: campaigns.filter(c => c.agentName === 'Alessandro').reduce((sum, c) => sum + c.leadsQualified, 0),
+      color: 'blue'
+    },
+    {
+      name: 'Aliza',
+      activeCampaigns: campaigns.filter(c => c.agentName === 'Aliza' && c.status === 'active').length,
+      totalContacts: campaigns.filter(c => c.agentName === 'Aliza').reduce((sum, c) => sum + c.targetsContacted, 0),
+      responseRate: 8.7,
+      leadsGenerated: campaigns.filter(c => c.agentName === 'Aliza').reduce((sum, c) => sum + c.leadsQualified, 0),
+      color: 'purple'
+    },
+    {
+      name: 'Marco',
+      activeCampaigns: campaigns.filter(c => c.agentName === 'Marco' && c.status === 'active').length,
+      totalContacts: campaigns.filter(c => c.agentName === 'Marco').reduce((sum, c) => sum + c.targetsContacted, 0),
+      responseRate: 15.2,
+      leadsGenerated: campaigns.filter(c => c.agentName === 'Marco').reduce((sum, c) => sum + c.leadsQualified, 0),
+      color: 'green'
+    },
+  ];
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   return (
-    <div 
-      className="p-4 rounded-lg border transition-all hover:shadow-md cursor-pointer"
-      style={{
-        background: 'rgba(30, 41, 59, 0.3)',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        animationDelay: `${delay}ms`
-      }}
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 min-w-0">
-          <h4 className="font-medium truncate" style={{color: '#f1f5f9'}}>
-            {lead.name}
-          </h4>
-          <p className="text-xs truncate" style={{color: '#94a3b8'}}>
-            {lead.email}
+    <div className={`space-y-6 ${className}`}>
+      {/* Overview Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="card">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20">
+              <Target size={20} className="text-[var(--color-primary)]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[var(--color-text-muted)]">Total Contacted</p>
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                {totalContacted.toLocaleString()}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-[var(--color-text-subtle)]">
+            {activeCampaigns} active campaigns
           </p>
         </div>
-        <div className="text-right">
-          <p className="text-sm font-semibold text-teal-400">
-            {lead.contact_data.business_value}/10
+
+        <div className="card">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-[var(--color-success)]/10 border border-[var(--color-success)]/20">
+              <MessageSquare size={20} className="text-[var(--color-success)]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[var(--color-text-muted)]">Response Rate</p>
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                {avgResponseRate.toFixed(1)}%
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-[var(--color-text-subtle)]">
+            {totalResponses} total responses
           </p>
-          <p className="text-xs" style={{color: '#94a3b8'}}>
-            Value
+        </div>
+
+        <div className="card">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
+              <Users size={20} className="text-[var(--color-warning)]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[var(--color-text-muted)]">Qualified Leads</p>
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                {totalLeads}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-[var(--color-text-subtle)]">
+            High-quality prospects
+          </p>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-[var(--color-info)]/10 border border-[var(--color-info)]/20">
+              <DollarSign size={20} className="text-[var(--color-info)]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[var(--color-text-muted)]">Cost Per Lead</p>
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                ${avgCostPerLead.toFixed(0)}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-[var(--color-text-subtle)]">
+            {formatCurrency(totalSpent)} spent total
           </p>
         </div>
       </div>
 
-      <div className="mb-3">
-        <span className={`status-indicator text-xs ${getStatusColor(lead.contact_type)}`}>
-          {lead.contact_type}
-        </span>
-        <p className="text-xs mt-2 line-clamp-2" style={{color: '#cbd5e1'}}>
-          {lead.contact_data.notes}
-        </p>
+      {/* Agent Performance */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        {agentStats.map((agent) => (
+          <AgentStats key={agent.name} {...agent} />
+        ))}
       </div>
 
-      <div className="flex flex-wrap gap-1 mb-2">
-        <span
-          className="px-2 py-1 text-xs rounded border"
-          style={{
-            background: '#374151',
-            color: '#cbd5e1',
-            borderColor: '#4b5563',
-          }}
-        >
-          {lead.contact_data.preferred_contact_method}
-        </span>
-        <span
-          className="px-2 py-1 text-xs rounded border"
-          style={{
-            background: '#374151',
-            color: '#cbd5e1',
-            borderColor: '#4b5563',
-          }}
-        >
-          {lead.interaction_count} interactions
-        </span>
-      </div>
+      {/* Campaign Cards */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="heading-sm">Active Campaigns</h3>
+          <div className="flex items-center gap-2">
+            <button className="btn btn-secondary btn-sm">
+              <BarChart3 size={14} />
+              Analytics
+            </button>
+            <button className="btn btn-primary btn-sm">
+              <Target size={14} />
+              New Campaign
+            </button>
+          </div>
+        </div>
 
-      <p className="text-xs" style={{color: '#94a3b8'}}>
-        Last contact {formatTimeAgo(lead.last_interaction)}
-      </p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {campaigns.map((campaign) => (
+            <CampaignCard
+              key={campaign.id}
+              {...campaign}
+              onToggleStatus={handleToggleStatus}
+            />
+          ))}
+        </div>
+
+        {campaigns.length === 0 && (
+          <div className="card text-center py-12">
+            <Target size={48} className="mx-auto text-[var(--color-text-subtle)] mb-4" />
+            <h4 className="heading-sm mb-2">No campaigns yet</h4>
+            <p className="text-[var(--color-text-muted)] mb-4">
+              Create your first Enreach campaign to start generating leads
+            </p>
+            <button className="btn btn-primary">
+              <Target size={16} />
+              Create Campaign
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
