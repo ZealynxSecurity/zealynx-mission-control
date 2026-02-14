@@ -1,398 +1,481 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { formatTimeAgo, formatNumber } from '@/lib/utils';
-import { TELEGRAM_CONFIG } from '@/lib/constants';
-import type { TelegramConversation } from '@/types/database';
+import { 
+  Search,
+  Filter,
+  MessageCircle,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  User,
+  Users,
+  Zap,
+  TrendingUp,
+  Eye,
+  MoreHorizontal
+} from 'lucide-react';
 
 interface TelegramDashboardProps {
   className?: string;
 }
 
-// Mock data representing Carlos's actual Telegram structure
-const MOCK_CONVERSATIONS: TelegramConversation[] = [
-  {
-    id: '1',
-    telegram_id: 'chat_001',
-    name: 'Monadex Protocol',
-    category: 'Act ZLX clie',
-    last_message: 'Final audit report delivered. Payment pending.',
-    last_activity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2h ago
-    unread_count: 0,
-    priority_score: 90,
-    is_bot: false,
-    chat_type: 'user',
-    conversation_data: {
-      total_messages: 45,
-      sentiment_score: 0.8,
-      business_context: 'audit client',
-    },
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    telegram_id: 'chat_002', 
-    name: 'Harbor Finance',
-    category: 'Pot ZLX clie',
-    last_message: 'Interested in Sway audit for launch next month. What\'s your capacity?',
-    last_activity: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6h ago
-    unread_count: 2,
-    priority_score: 70,
-    is_bot: false,
-    chat_type: 'user',
-    conversation_data: {
-      total_messages: 12,
-      sentiment_score: 0.0,
-      business_context: 'potential client',
-    },
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    telegram_id: 'chat_003',
-    name: 'DeFi Yield Protocol',
-    category: 'Enreach lead',
-    last_message: 'Thanks for reaching out! We need a Solidity audit before mainnet.',
-    last_activity: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12h ago
-    unread_count: 1,
-    priority_score: 60,
-    is_bot: false,
-    chat_type: 'user',
-    conversation_data: {
-      total_messages: 8,
-      sentiment_score: 0.6,
-      business_context: 'enreach lead',
-    },
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    telegram_id: 'chat_004',
-    name: 'Aurora Partnership',
-    category: 'BD',
-    last_message: 'Let\'s schedule a call next week to discuss the partnership terms.',
-    last_activity: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1d ago
-    unread_count: 0,
-    priority_score: 30,
-    is_bot: false,
-    chat_type: 'user',
-    conversation_data: {
-      total_messages: 15,
-      sentiment_score: 0.8,
-      business_context: 'business development',
-    },
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '5',
-    telegram_id: 'chat_005',
-    name: 'Urgent Smart Contract Issue',
-    category: 'Act ZLX clie',
-    last_message: 'URGENT: Found potential vulnerability in production contract. Can you review ASAP?',
-    last_activity: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30m ago
-    unread_count: 3,
-    priority_score: 100,
-    is_bot: false,
-    chat_type: 'user',
-    conversation_data: {
-      total_messages: 67,
-      sentiment_score: -0.5,
-      business_context: 'emergency audit',
-    },
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
+interface ConversationProps {
+  id: string;
+  name: string;
+  category: string;
+  lastMessage: string;
+  lastActivity: string;
+  unreadCount: number;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  isBot: boolean;
+  chatType: 'user' | 'group' | 'channel';
+  sentiment: 'positive' | 'neutral' | 'negative';
+  businessContext: string;
+  avatar?: string;
+}
 
-export function TelegramDashboard({ className = '' }: TelegramDashboardProps) {
-  const [conversations, setConversations] = useState<TelegramConversation[]>(MOCK_CONVERSATIONS);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Filter conversations based on category and search
-  const filteredConversations = conversations.filter(conv => {
-    const matchesCategory = selectedCategory === 'all' || conv.category === selectedCategory;
-    const matchesSearch = !searchQuery || 
-      conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (conv.last_message && conv.last_message.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (conv.conversation_data.business_context && conv.conversation_data.business_context.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    return matchesCategory && matchesSearch;
-  });
-
-  // Sort by priority and recency
-  const sortedConversations = [...filteredConversations].sort((a, b) => {
-    // Higher priority score comes first
-    if (a.priority_score !== b.priority_score) {
-      return b.priority_score - a.priority_score;
+function ConversationCard({ 
+  id, 
+  name, 
+  category, 
+  lastMessage, 
+  lastActivity, 
+  unreadCount, 
+  priority, 
+  isBot, 
+  chatType, 
+  sentiment,
+  businessContext,
+  avatar 
+}: ConversationProps) {
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return 'bg-[var(--color-error)]/10 border-[var(--color-error)]/30 text-[var(--color-error)]';
+      case 'high': return 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]/30 text-[var(--color-warning)]';
+      case 'medium': return 'bg-[var(--color-info)]/10 border-[var(--color-info)]/30 text-[var(--color-info)]';
+      default: return 'bg-[var(--color-text-subtle)]/10 border-[var(--color-text-subtle)]/30 text-[var(--color-text-subtle)]';
     }
-    return new Date(b.last_activity).getTime() - new Date(a.last_activity).getTime();
-  });
+  };
 
-  // Calculate category stats
-  const categoryStats = TELEGRAM_CONFIG.categories.map(category => ({
-    category,
-    count: conversations.filter(c => c.category === category).length,
-    urgent: conversations.filter(c => c.category === category && c.priority_score >= 90).length,
-  }));
+  const getSentimentColor = (sentiment: string) => {
+    switch (sentiment) {
+      case 'positive': return 'text-[var(--color-success)]';
+      case 'negative': return 'text-[var(--color-error)]';
+      default: return 'text-[var(--color-text-subtle)]';
+    }
+  };
 
-  // Mock refresh function
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      // Add slight variation to demonstrate live updates
-      setConversations(prev => prev.map(conv => ({
-        ...conv,
-        unread_count: Math.max(0, conv.unread_count + Math.floor(Math.random() * 3 - 1))
-      })));
-      setIsRefreshing(false);
-    }, 1500);
+  const getChatIcon = () => {
+    switch (chatType) {
+      case 'group': return <Users size={16} />;
+      case 'channel': return <MessageCircle size={16} />;
+      default: return <User size={16} />;
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor(diff / (1000 * 60));
+
+    if (hours > 24) {
+      const days = Math.floor(hours / 24);
+      return `${days}d ago`;
+    } else if (hours > 0) {
+      return `${hours}h ago`;
+    } else {
+      return `${minutes}m ago`;
+    }
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Header Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="card">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">💬</span>
-            <div>
-              <p className="caption">Total Conversations</p>
-              <p className="text-2xl font-semibold text-slate-100">
-                {formatNumber(conversations.length)}
-              </p>
-            </div>
+    <div className="card hover:shadow-lg transition-all duration-200 cursor-pointer group">
+      <div className="flex items-start gap-4">
+        {/* Avatar */}
+        <div className="relative flex-shrink-0">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-light)] flex items-center justify-center">
+            <span className="text-white font-semibold text-sm">
+              {name.charAt(0).toUpperCase()}
+            </span>
           </div>
-          <p className="text-xs text-slate-400">
-            Actively monitored by Elliot AI
-          </p>
-        </div>
-        
-        <div className="card">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">🚨</span>
-            <div>
-              <p className="caption">Urgent Attention</p>
-              <p className="text-2xl font-semibold text-red-400">
-                {conversations.filter(c => c.priority_score >= 90).length}
-              </p>
+          {unreadCount > 0 && (
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--color-error)] text-white text-xs font-medium rounded-full flex items-center justify-center">
+              {unreadCount > 9 ? '9+' : unreadCount}
             </div>
-          </div>
-          <p className="text-xs text-slate-400">
-            High priority score (&gt;90)
-          </p>
+          )}
+          {isBot && (
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[var(--color-info)] text-white rounded-full flex items-center justify-center">
+              <Zap size={10} />
+            </div>
+          )}
         </div>
 
-        <div className="card">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">📈</span>
-            <div>
-              <p className="caption">High Priority Score</p>
-              <p className="text-2xl font-semibold text-teal-400">
-                {conversations.filter(c => c.priority_score >= 70).length}
-              </p>
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="font-semibold text-[var(--color-text-primary)] truncate">
+                {name}
+              </h3>
+              <div className="flex items-center gap-1 text-[var(--color-text-subtle)]">
+                {getChatIcon()}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-medium ${getSentimentColor(sentiment)}`}>
+                ●
+              </span>
+              <span className="text-xs text-[var(--color-text-subtle)]">
+                {formatTimeAgo(lastActivity)}
+              </span>
             </div>
           </div>
-          <p className="text-xs text-slate-400">
-            AI-scored business potential
-          </p>
-        </div>
 
-        <div className="card">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">✉️</span>
-            <div>
-              <p className="caption">Unread Messages</p>
-              <p className="text-2xl font-semibold text-amber-400">
-                {conversations.reduce((sum, c) => sum + c.unread_count, 0)}
-              </p>
-            </div>
+          {/* Category and Priority */}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs px-2 py-1 bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] rounded-full">
+              {category}
+            </span>
+            <span className={`text-xs px-2 py-1 rounded-full border ${getPriorityColor(priority)}`}>
+              {priority}
+            </span>
+            <span className="text-xs text-[var(--color-text-subtle)]">
+              {businessContext}
+            </span>
           </div>
-          <p className="text-xs text-slate-400">
-            Across all conversations
-          </p>
-        </div>
-      </div>
 
-      {/* Controls */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-              selectedCategory === 'all'
-                ? 'bg-teal-500 text-white border-teal-500'
-                : 'bg-slate-800 text-slate-300 border-slate-600 hover:border-slate-500'
-            }`}
-          >
-            All ({conversations.length})
-          </button>
-          {TELEGRAM_CONFIG.categories.slice(0, 5).map(category => {
-            const stat = categoryStats.find(s => s.category === category);
-            return (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                  selectedCategory === category
-                    ? 'bg-teal-500 text-white border-teal-500'
-                    : 'bg-slate-800 text-slate-300 border-slate-600 hover:border-slate-500'
-                }`}
-              >
-                {category} ({stat?.count || 0})
-                {stat && stat.urgent > 0 && (
-                  <span className="ml-1 text-red-400">🚨</span>
-                )}
+          {/* Last Message */}
+          <p className="text-sm text-[var(--color-text-muted)] line-clamp-2 mb-2">
+            {lastMessage}
+          </p>
+
+          {/* Actions */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button className="btn btn-ghost btn-sm">
+                <Eye size={14} />
+                View
               </button>
-            );
-          })}
-        </div>
-
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Search conversations..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="px-3 py-2 text-sm bg-slate-800 border border-slate-600 rounded-lg text-slate-100 placeholder-slate-400 focus:border-teal-500 focus:outline-none"
-          />
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="px-4 py-2 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
-          >
-            {isRefreshing ? '🔄' : '↻'}
-          </button>
-        </div>
-      </div>
-
-      {/* Conversations List */}
-      <div className="space-y-3">
-        {sortedConversations.map((conversation, index) => (
-          <ConversationCard
-            key={conversation.id}
-            conversation={conversation}
-            delay={index * 50}
-          />
-        ))}
-
-        {sortedConversations.length === 0 && (
-          <div className="card text-center py-12">
-            <span className="text-4xl mb-4 block">🔍</span>
-            <h3 className="heading-sm mb-2">No conversations found</h3>
-            <p className="text-slate-400">
-              Try adjusting your search or category filter
-            </p>
+              <button className="btn btn-ghost btn-sm">
+                <MessageCircle size={14} />
+                Reply
+              </button>
+            </div>
+            <button className="p-1 rounded text-[var(--color-text-subtle)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]">
+              <MoreHorizontal size={16} />
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
 }
 
-// Sub-component for conversation cards
-interface ConversationCardProps {
-  conversation: TelegramConversation;
-  delay?: number;
+interface CategoryStatsProps {
+  category: string;
+  count: number;
+  urgent: number;
+  color: string;
 }
 
-function ConversationCard({ conversation, delay = 0 }: ConversationCardProps) {
-  const getPriorityColor = (score: number) => {
-    if (score >= 90) return 'text-red-500 border-red-500/30 bg-red-500/5';
-    if (score >= 70) return 'text-orange-500 border-orange-500/30 bg-orange-500/5';
-    if (score >= 50) return 'text-yellow-500 border-yellow-500/30 bg-yellow-500/5';
-    return 'text-gray-500 border-gray-500/30 bg-gray-500/5';
-  };
+function CategoryStats({ category, count, urgent, color }: CategoryStatsProps) {
+  return (
+    <div className="card">
+      <div className="flex items-center justify-between mb-3">
+        <div className={`w-3 h-3 rounded-full bg-${color}-500`}></div>
+        <span className="text-xs text-[var(--color-text-subtle)]">
+          {urgent > 0 && `${urgent} urgent`}
+        </span>
+      </div>
+      <h4 className="font-semibold text-[var(--color-text-primary)] mb-1">
+        {category}
+      </h4>
+      <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+        {count}
+      </p>
+      <p className="text-xs text-[var(--color-text-muted)]">
+        conversations
+      </p>
+    </div>
+  );
+}
 
-  const getPriorityLabel = (score: number) => {
-    if (score >= 90) return 'urgent';
-    if (score >= 70) return 'high';
-    if (score >= 50) return 'medium';
-    return 'low';
-  };
+export function TelegramDashboard({ className = '' }: TelegramDashboardProps) {
+  const [conversations, setConversations] = useState<ConversationProps[]>([]);
+  const [filteredConversations, setFilteredConversations] = useState<ConversationProps[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedPriority, setSelectedPriority] = useState('all');
 
-  const getSentimentEmoji = (score?: number) => {
-    if (!score) return '😐';
-    if (score > 0.3) return '😊';
-    if (score < -0.3) return '😟';
-    return '😐';
-  };
+  // Mock data - in real app this would come from your Telegram scanner
+  useEffect(() => {
+    const mockConversations: ConversationProps[] = [
+      {
+        id: '1',
+        name: 'Monadex Protocol',
+        category: 'Act ZLX clie',
+        lastMessage: 'Final audit report delivered. Payment pending confirmation.',
+        lastActivity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        unreadCount: 0,
+        priority: 'medium',
+        isBot: false,
+        chatType: 'user',
+        sentiment: 'positive',
+        businessContext: 'Active Client'
+      },
+      {
+        id: '2',
+        name: 'Harbor Finance',
+        category: 'Pot ZLX clie',
+        lastMessage: 'Interested in Sway audit for launch next month. What\'s your capacity?',
+        lastActivity: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        unreadCount: 2,
+        priority: 'high',
+        isBot: false,
+        chatType: 'user',
+        sentiment: 'positive',
+        businessContext: 'Hot Lead'
+      },
+      {
+        id: '3',
+        name: 'Lido Finance Team',
+        category: 'Act ZLX clie',
+        lastMessage: 'Thanks for the comprehensive security review. Everything looks solid.',
+        lastActivity: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+        unreadCount: 0,
+        priority: 'low',
+        isBot: false,
+        chatType: 'group',
+        sentiment: 'positive',
+        businessContext: 'Completed Project'
+      },
+      {
+        id: '4',
+        name: 'DeFi Alliance',
+        category: 'BD',
+        lastMessage: 'We\'d love to discuss partnership opportunities for our portfolio companies.',
+        lastActivity: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        unreadCount: 1,
+        priority: 'urgent',
+        isBot: false,
+        chatType: 'user',
+        sentiment: 'positive',
+        businessContext: 'Partnership'
+      },
+      {
+        id: '5',
+        name: 'Web3 Security Chat',
+        category: 'Uncategorized',
+        lastMessage: 'Has anyone worked with Zealynx? Looking for audit recommendations.',
+        lastActivity: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+        unreadCount: 3,
+        priority: 'medium',
+        isBot: false,
+        chatType: 'group',
+        sentiment: 'neutral',
+        businessContext: 'Industry Discussion'
+      },
+    ];
+    
+    setConversations(mockConversations);
+    setFilteredConversations(mockConversations);
+  }, []);
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'Act ZLX clie': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-      case 'Pot ZLX clie': return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
-      case 'Enreach lead': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
-      case 'BD': return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
-      case 'Audits': return 'bg-red-500/20 text-red-300 border-red-500/30';
-      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+  // Filter conversations based on search and filters
+  useEffect(() => {
+    let filtered = conversations;
+
+    if (searchQuery) {
+      filtered = filtered.filter(conv => 
+        conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
-  };
+
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(conv => conv.category === selectedCategory);
+    }
+
+    if (selectedPriority !== 'all') {
+      filtered = filtered.filter(conv => conv.priority === selectedPriority);
+    }
+
+    setFilteredConversations(filtered);
+  }, [conversations, searchQuery, selectedCategory, selectedPriority]);
+
+  const categories = [...new Set(conversations.map(c => c.category))];
+  const categoryStats = categories.map(category => ({
+    category,
+    count: conversations.filter(c => c.category === category).length,
+    urgent: conversations.filter(c => c.category === category && (c.priority === 'urgent' || c.priority === 'high')).length,
+    color: 'teal' // You could make this dynamic based on category
+  }));
+
+  const totalUnread = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
+  const urgentCount = conversations.filter(c => c.priority === 'urgent').length;
+  const highPriorityCount = conversations.filter(c => c.priority === 'high').length;
 
   return (
-    <div
-      className={`card hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 ${
-        conversation.priority_score >= 90 ? 'border-l-red-500' :
-        conversation.priority_score >= 70 ? 'border-l-orange-500' :
-        conversation.priority_score >= 50 ? 'border-l-yellow-500' :
-        'border-l-gray-500'
-      }`}
-      style={{ animationDelay: `${delay}ms` }}
-    >
-      <div className="flex items-start gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <div className="min-w-0 flex-1">
-              <h3 className="heading-sm truncate">
-                {conversation.name}
-              </h3>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`status-indicator text-xs ${getCategoryColor(conversation.category)}`}>
-                  {conversation.category}
-                </span>
-                <span className={`status-indicator text-xs ${getPriorityColor(conversation.priority_score)}`}>
-                  {getPriorityLabel(conversation.priority_score)}
-                </span>
-                {conversation.priority_score >= 70 && (
-                  <span className="status-indicator text-xs bg-teal-500/20 text-teal-300 border-teal-500/30">
-                    Score: {conversation.priority_score}
-                  </span>
-                )}
-              </div>
+    <div className={`space-y-6 ${className}`}>
+      {/* Overview Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="card">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20">
+              <MessageCircle size={20} className="text-[var(--color-primary)]" />
             </div>
-            
-            <div className="flex items-center gap-2 text-slate-400 text-sm">
-              <span>{getSentimentEmoji(conversation.conversation_data.sentiment_score)}</span>
-              <span>{formatTimeAgo(conversation.last_activity)}</span>
-              {conversation.unread_count > 0 && (
-                <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] text-center">
-                  {conversation.unread_count}
-                </span>
-              )}
+            <div>
+              <p className="text-sm font-medium text-[var(--color-text-muted)]">Total Conversations</p>
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                {conversations.length}
+              </p>
             </div>
           </div>
-          
-          <p className="text-slate-300 text-sm line-clamp-2 mb-2">
-            {conversation.last_message || 'No recent messages'}
+          <p className="text-xs text-[var(--color-text-subtle)]">
+            Active business discussions
           </p>
-          
-          {conversation.conversation_data.business_context && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              <span className="px-2 py-1 text-xs bg-slate-700 text-slate-300 rounded border border-slate-600">
-                {conversation.conversation_data.business_context}
-              </span>
-              <span className="px-2 py-1 text-xs bg-slate-700 text-slate-300 rounded border border-slate-600">
-                {conversation.conversation_data.total_messages} messages
-              </span>
-            </div>
-          )}
         </div>
+
+        <div className="card">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-[var(--color-error)]/10 border border-[var(--color-error)]/20">
+              <AlertCircle size={20} className="text-[var(--color-error)]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[var(--color-text-muted)]">Unread Messages</p>
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                {totalUnread}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-[var(--color-text-subtle)]">
+            Requiring attention
+          </p>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
+              <Clock size={20} className="text-[var(--color-warning)]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[var(--color-text-muted)]">Urgent Priority</p>
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                {urgentCount}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-[var(--color-text-subtle)]">
+            Immediate response needed
+          </p>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-[var(--color-success)]/10 border border-[var(--color-success)]/20">
+              <TrendingUp size={20} className="text-[var(--color-success)]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[var(--color-text-muted)]">High Priority</p>
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                {highPriorityCount}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-[var(--color-text-subtle)]">
+            Important discussions
+          </p>
+        </div>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="card">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1 relative">
+            <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-subtle)]" />
+            <input
+              type="text"
+              placeholder="Search conversations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-subtle)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]/20"
+            />
+          </div>
+
+          {/* Category Filter */}
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-3 py-2 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-primary)]"
+          >
+            <option value="all">All Categories</option>
+            {categories.map(category => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+
+          {/* Priority Filter */}
+          <select
+            value={selectedPriority}
+            onChange={(e) => setSelectedPriority(e.target.value)}
+            className="px-3 py-2 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-primary)]"
+          >
+            <option value="all">All Priorities</option>
+            <option value="urgent">Urgent</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Category Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {categoryStats.map((stat, index) => (
+          <CategoryStats
+            key={stat.category}
+            category={stat.category}
+            count={stat.count}
+            urgent={stat.urgent}
+            color={stat.color}
+          />
+        ))}
+      </div>
+
+      {/* Conversations List */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="heading-sm">
+            Conversations ({filteredConversations.length})
+          </h3>
+          <div className="flex items-center gap-2">
+            <button className="btn btn-secondary btn-sm">
+              <Filter size={14} />
+              Advanced Filters
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-4">
+          {filteredConversations.map((conversation) => (
+            <ConversationCard key={conversation.id} {...conversation} />
+          ))}
+        </div>
+
+        {filteredConversations.length === 0 && (
+          <div className="card text-center py-12">
+            <MessageCircle size={48} className="mx-auto text-[var(--color-text-subtle)] mb-4" />
+            <h4 className="heading-sm mb-2">No conversations found</h4>
+            <p className="text-[var(--color-text-muted)]">
+              Try adjusting your search terms or filters
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
