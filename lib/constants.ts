@@ -21,6 +21,8 @@ export const CURRENT_BUSINESS_METRICS = {
   pipeline_value: 485000,
   conversion_rate: 0.15,
   telegram_conversations: 195,
+  urgent_conversations: 3,
+  enreach_campaigns: 24,
   monthly_growth_rate: 0.08,
   avg_deal_size: 15000,
   avg_audit_duration: 3, // weeks

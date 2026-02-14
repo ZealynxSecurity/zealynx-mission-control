@@ -151,7 +151,7 @@ export async function searchConversations(
       return [];
     }
 
-    const conversationIds = data.map(item => item.id);
+    const conversationIds = data.map((item: any) => item.id);
     const { data: conversations, error: fetchError } = await supabase
       .from('telegram_conversations')
       .select('*')
@@ -202,7 +202,7 @@ export async function searchDeals(
       return [];
     }
 
-    const dealIds = data.map(item => item.id);
+    const dealIds = data.map((item: any) => item.id);
     const { data: deals, error: fetchError } = await supabase
       .from('deals')
       .select('*')
