@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import EnterpriseLayout from "@/components/EnterpriseLayout";
 
 const inter = Inter({
   subsets: ['latin'],
@@ -109,7 +110,9 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased mobile-safe-area`}>
         {/* Main app content */}
         <div className="relative z-0 min-h-screen min-h-dvh">
-          {children}
+          <EnterpriseLayout>
+            {children}
+          </EnterpriseLayout>
         </div>
         
         {/* Development indicators */}
